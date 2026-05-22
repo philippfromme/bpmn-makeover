@@ -191,7 +191,6 @@ body {
   display: none;
 }
 
-/* bpmn-js palette polish: shadcn-like soft surface */
 #canvas .djs-palette {
   border: 1px solid #e4e4e7;
   border-radius: 12px;
@@ -202,6 +201,11 @@ body {
 #canvas .djs-palette .entry,
 #canvas .djs-palette .separator {
   border-radius: 8px;
+}
+
+#canvas .djs-overlay-drilldown button {
+  border-radius: 6px;
+  box-shadow: 0 10px 24px rgba(24, 24, 27, 0.1);
 }
 
 @media (max-width: 768px) {
