@@ -60,6 +60,9 @@ document.querySelector('#app').innerHTML = `
     <button id="new-diagram" type="button">New Diagram</button>
     <button id="download-diagram" type="button">Download BPMN</button>
   </nav>
+  <div id="drop-overlay" class="drop-overlay" hidden>
+    <p>Drop a BPMN/XML file to import</p>
+  </div>
   <div id="canvas"></div>
 </main>
 `
@@ -70,10 +73,17 @@ const modeler = new BpmnModeler({
 
 const menuToggle = document.querySelector('#menu-toggle')
 const menu = document.querySelector('#menu')
+const appShell = document.querySelector('.app-shell')
+const dropOverlay = document.querySelector('#drop-overlay')
+let dragDepth = 0
 
 const setMenuOpen = (open) => {
   menu.hidden = !open
   menuToggle.setAttribute('aria-expanded', String(open))
+}
+
+const setDropOverlayOpen = (open) => {
+  dropOverlay.hidden = !open
 }
 
 setMenuOpen(false)
@@ -100,6 +110,29 @@ const downloadDiagram = async () => {
   } catch (error) {
     console.error('Failed to export BPMN diagram', error)
   }
+}
+
+const importDiagramFromXml = async (xmlContent) => {
+  try {
+    await modeler.importXML(xmlContent)
+    modeler.get('canvas').zoom('fit-viewport')
+  } catch (error) {
+    console.error('Failed to import dropped BPMN/XML file', error)
+  }
+}
+
+const getDroppedFile = (dataTransfer) => {
+  if (!dataTransfer?.files?.length) {
+    return null
+  }
+
+  return Array.from(dataTransfer.files).find((file) => {
+    const lowerName = file.name.toLowerCase()
+    const isXmlByName = lowerName.endsWith('.xml') || lowerName.endsWith('.bpmn')
+    const isXmlByType = file.type === 'text/xml' || file.type === 'application/xml'
+
+    return isXmlByName || isXmlByType
+  })
 }
 
 document
@@ -136,6 +169,40 @@ document.addEventListener('keydown', (event) => {
   if (event.key === 'Escape') {
     setMenuOpen(false)
   }
+})
+
+appShell.addEventListener('dragenter', (event) => {
+  event.preventDefault()
+  dragDepth += 1
+  setDropOverlayOpen(true)
+})
+
+appShell.addEventListener('dragover', (event) => {
+  event.preventDefault()
+})
+
+appShell.addEventListener('dragleave', (event) => {
+  event.preventDefault()
+  dragDepth = Math.max(0, dragDepth - 1)
+
+  if (dragDepth === 0) {
+    setDropOverlayOpen(false)
+  }
+})
+
+appShell.addEventListener('drop', async (event) => {
+  event.preventDefault()
+  dragDepth = 0
+  setDropOverlayOpen(false)
+
+  const droppedFile = getDroppedFile(event.dataTransfer)
+
+  if (!droppedFile) {
+    return
+  }
+
+  const xmlContent = await droppedFile.text()
+  await importDiagramFromXml(xmlContent)
 })
 
 importDiagram()

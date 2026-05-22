@@ -92,6 +92,33 @@ body {
   height: 100%;
 }
 
+.drop-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+  display: grid;
+  place-items: center;
+  border: 2px dashed #a1a1aa;
+  background: rgba(255, 255, 255, 0.72);
+  backdrop-filter: blur(1.5px);
+  pointer-events: none;
+}
+
+.drop-overlay p {
+  margin: 0;
+  padding: 0.65rem 0.9rem;
+  border: 1px solid #e4e4e7;
+  border-radius: 10px;
+  background: #ffffff;
+  color: #27272a;
+  font-weight: 600;
+  box-shadow: 0 8px 20px rgba(24, 24, 27, 0.1);
+}
+
+.drop-overlay[hidden] {
+  display: none;
+}
+
 /* bpmn-js palette polish: shadcn-like soft surface */
 #canvas .djs-palette {
   border: 1px solid #e4e4e7;
