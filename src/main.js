@@ -59,7 +59,25 @@ document.querySelector('#app').innerHTML = `
   <nav id="menu" class="menu" hidden>
     <button id="new-diagram" type="button">New Diagram</button>
     <button id="download-diagram" type="button">Download BPMN</button>
+    <button id="open-about" type="button">About</button>
   </nav>
+  <section id="about-modal" class="about-modal" hidden>
+    <article class="about-card" role="dialog" aria-modal="true" aria-labelledby="about-title">
+      <div class="about-header">
+        <h2 id="about-title">About</h2>
+        <button id="close-about" class="about-close" type="button" aria-label="Close about">×</button>
+      </div>
+      <p>This is a demo of a potentially improved BPMN modeler experience.</p>
+      <p>Features:</p>
+      <ul class="about-points">
+        <li>BPMN rendering improvements based on the following principles:</li>
+        <ul>
+          <li>Refreshed BPMN symbols for cleaner visuals.</li>
+          <li>Rounded corners for friendlier, more modern look.</li>
+        </ul>
+      </ul>
+    </article>
+  </section>
   <div id="drop-overlay" class="drop-overlay" hidden>
     <p>Drop a BPMN/XML file to import</p>
   </div>
@@ -75,6 +93,9 @@ const menuToggle = document.querySelector('#menu-toggle')
 const menu = document.querySelector('#menu')
 const appShell = document.querySelector('.app-shell')
 const dropOverlay = document.querySelector('#drop-overlay')
+const aboutModal = document.querySelector('#about-modal')
+const openAboutButton = document.querySelector('#open-about')
+const closeAboutButton = document.querySelector('#close-about')
 let dragDepth = 0
 
 const setMenuOpen = (open) => {
@@ -84,6 +105,10 @@ const setMenuOpen = (open) => {
 
 const setDropOverlayOpen = (open) => {
   dropOverlay.hidden = !open
+}
+
+const setAboutOpen = (open) => {
+  aboutModal.hidden = !open
 }
 
 setMenuOpen(false)
@@ -149,6 +174,15 @@ document
     setMenuOpen(false)
   })
 
+openAboutButton.addEventListener('click', () => {
+  setAboutOpen(true)
+  setMenuOpen(false)
+})
+
+closeAboutButton.addEventListener('click', () => {
+  setAboutOpen(false)
+})
+
 menuToggle.addEventListener('click', () => {
   setMenuOpen(menu.hidden)
 })
@@ -168,6 +202,13 @@ document.addEventListener('click', (event) => {
 document.addEventListener('keydown', (event) => {
   if (event.key === 'Escape') {
     setMenuOpen(false)
+    setAboutOpen(false)
+  }
+})
+
+aboutModal.addEventListener('click', (event) => {
+  if (event.target === aboutModal) {
+    setAboutOpen(false)
   }
 })
 

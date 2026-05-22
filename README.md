@@ -1,6 +1,6 @@
-# BPMN Modeler Demo
+# BPMN Makeover
 
-Simple web app that embeds a BPMN modeler powered by `bpmn-js` and built with Vite.
+BPMN like it was designed in 2026.
 
 ## Run locally
 
