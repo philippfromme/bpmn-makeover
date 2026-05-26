@@ -208,6 +208,20 @@ body {
   box-shadow: 0 10px 24px rgba(24, 24, 27, 0.1);
 }
 
+#canvas .djs-resize-overlay {
+  stroke-dasharray: none;
+}
+
+#canvas .djs-resizer-visual {
+  rx: 2px;
+  ry: 2px;
+}
+
+#canvas .djs-segment-dragger .djs-visual {
+  rx: 2px;
+  ry: 2px;
+}
+
 @media (max-width: 768px) {
   .menu-toggle {
     top: 0.75rem;
