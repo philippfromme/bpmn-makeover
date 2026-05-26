@@ -107,7 +107,7 @@ const downloadDiagram = async () => {
 const importDiagramFromXml = async (xmlContent) => {
   try {
     await modeler.importXML(xmlContent)
-    modeler.get('canvas').zoom('fit-viewport')
+    // modeler.get('canvas').zoom('fit-viewport')
   } catch (error) {
     console.error('Failed to import dropped BPMN/XML file', error)
   }
