@@ -30,6 +30,7 @@ document.querySelector('#app').innerHTML = `
         <li>BPMN rendering improvements based on the following principles:</li>
         <ul>
           <li>Refreshed BPMN symbols for cleaner visuals.</li>
+          <li>Show outline on hover</li>
           <li>Rounded corners for friendlier, more modern look.</li>
         </ul>
       </ul>
