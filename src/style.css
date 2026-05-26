@@ -222,6 +222,16 @@ body {
   ry: 2px;
 }
 
+#canvas .djs-element.hover:not(.selected) .djs-outline {
+  visibility: visible;
+  stroke: var(--element-selected-outline-secondary-stroke-color);
+}
+
+#canvas .djs-connection.hover:not(.selected) .djs-outline {
+  visibility: visible;
+  stroke: var(--element-selected-outline-secondary-stroke-color);
+}
+
 @media (max-width: 768px) {
   .menu-toggle {
     top: 0.75rem;
