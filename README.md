@@ -2,6 +2,11 @@
 
 BPMN like it was designed in 2026.
 
+# Principles
+
+- rounded corners [are perceived as friendly](https://www.pixeldarts.com/en/post/why-rounded-corners-are-everywhere-in-design)
+- ...
+
 ## Run locally
 
 ```bash
