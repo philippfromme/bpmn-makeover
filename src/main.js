@@ -27,12 +27,9 @@ document.querySelector('#app').innerHTML = `
       <p>This is a demo of a potentially improved BPMN modeler experience.</p>
       <p>Features:</p>
       <ul class="about-points">
-        <li>BPMN rendering improvements based on the following principles:</li>
-        <ul>
-          <li>Refreshed BPMN symbols for cleaner visuals.</li>
-          <li>Show outline on hover</li>
-          <li>Rounded corners for friendlier, more modern look.</li>
-        </ul>
+        <li>Refreshed BPMN symbols for cleaner visuals</li>
+        <li>Rounded corners for friendlier look</li>
+        <li>Outline shown on hover for better visual feedback</li>
       </ul>
     </article>
   </section>
@@ -90,6 +87,28 @@ const importDiagram = async () => {
   }
 }
 
+const NEW_DIAGRAM_XML = `<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" id="Definitions_0xr55f2" targetNamespace="http://bpmn.io/schema/bpmn" xmlns:zeebe="http://camunda.org/schema/zeebe/1.0" xmlns:modeler="http://camunda.org/schema/modeler/1.0" exporter="Camunda Modeler" exporterVersion="5.47.0" modeler:executionPlatform="Camunda Cloud" modeler:executionPlatformVersion="8.9.0">
+  <bpmn:process id="Process_157x7hv" isExecutable="true">
+    <bpmn:startEvent id="StartEvent_1" />
+  </bpmn:process>
+  <bpmndi:BPMNDiagram id="BPMNDiagram_1">
+    <bpmndi:BPMNPlane id="BPMNPlane_1" bpmnElement="Process_157x7hv">
+      <bpmndi:BPMNShape id="StartEvent_1_di" bpmnElement="StartEvent_1">
+        <dc:Bounds x="182" y="162" width="36" height="36" />
+      </bpmndi:BPMNShape>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</bpmn:definitions>`
+
+const createNewDiagram = async () => {
+  try {
+    await importDiagramFromXml(NEW_DIAGRAM_XML)
+  } catch (error) {
+    console.error('Failed to create new diagram', error)
+  }
+}
+
 const downloadDiagram = async () => {
   try {
     const { xml } = await modeler.saveXML({ format: true })
@@ -131,7 +150,7 @@ const getDroppedFile = (dataTransfer) => {
 document
   .querySelector('#new-diagram')
   .addEventListener('click', () => {
-    importDiagram()
+    createNewDiagram()
     setMenuOpen(false)
   })
 
