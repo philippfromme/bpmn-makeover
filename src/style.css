@@ -155,6 +155,79 @@ body {
   display: none;
 }
 
+/* --- About modal --- */
+
+.about-modal {
+  position: absolute;
+  inset: 0;
+  z-index: 9999;
+  display: grid;
+  place-items: center;
+  background: rgba(24, 24, 27, 0.18);
+  backdrop-filter: blur(1.5px);
+}
+
+.about-modal[hidden] {
+  display: none;
+}
+
+.about-card {
+  width: min(480px, calc(100vw - 2rem));
+  padding: 1.25rem;
+  border: 1px solid #e4e4e7;
+  border-radius: 12px;
+  background: #ffffff;
+  box-shadow: 0 20px 40px rgba(24, 24, 27, 0.15);
+}
+
+.about-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.75rem;
+}
+
+.about-header h2 {
+  margin: 0;
+  font-size: 1rem;
+  color: #18181b;
+}
+
+.about-close {
+  width: 32px;
+  height: 32px;
+  border: 1px solid #e4e4e7;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #27272a;
+  font-size: 1.2rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.about-close:hover {
+  background: #f4f4f5;
+}
+
+.about-card p {
+  margin: 0;
+  color: #3f3f46;
+}
+
+.about-card p + p {
+  margin-top: 0.5rem;
+}
+
+.about-list {
+  margin: 0.6rem 0;
+  padding-left: 1.2rem;
+  color: #3f3f46;
+}
+
+.about-list li + li {
+  margin-top: 0.35rem;
+}
+
 #canvas-right .djs-palette {
   border: 1px solid #e4e4e7;
   border-radius: 8px;

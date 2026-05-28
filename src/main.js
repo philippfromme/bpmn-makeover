@@ -28,6 +28,7 @@ document.querySelector('#app').innerHTML = `
         <div class="panel-actions">
           <button id="new-diagram" class="toggle-split" type="button">New diagram</button>
           <button id="toggle-split" class="toggle-split" type="button" aria-label="Toggle comparison">Show before</button>
+          <button id="open-about" class="toggle-split" type="button">About</button>
         </div>
       </div>
       <div id="canvas-right" class="canvas"></div>
@@ -36,6 +37,22 @@ document.querySelector('#app').innerHTML = `
   <div id="drop-overlay" class="drop-overlay" hidden>
     <p>Drop a BPMN/XML file to import</p>
   </div>
+  <section id="about-modal" class="about-modal" hidden>
+    <article class="about-card" role="dialog" aria-modal="true">
+      <div class="about-header">
+        <h2>What's New</h2>
+        <button id="close-about" class="about-close" type="button" aria-label="Close">&times;</button>
+      </div>
+      <p>We're exploring a refreshed look for the BPMN modeler. Here's what changed:</p>
+      <ul class="about-list">
+        <li>Redesigned task and event icons for improved clarity</li>
+        <li>Updated task markers with a cleaner style</li>
+        <li>Rounded corners on gateways and participants for a friendlier feel</li>
+        <li>Elements now show an outline on hover for better visual feedback</li>
+      </ul>
+      <p>Use <strong>Show before</strong> to compare side-by-side with the classic look.</p>
+    </article>
+  </section>
 </main>
 `
 
@@ -185,6 +202,22 @@ const NEW_DIAGRAM_XML = `<?xml version="1.0" encoding="UTF-8"?>
 
 document.querySelector('#new-diagram').addEventListener('click', () => {
   importDiagram(NEW_DIAGRAM_XML)
+})
+
+// --- About modal ---
+
+const aboutModal = document.querySelector('#about-modal')
+
+document.querySelector('#open-about').addEventListener('click', () => {
+  aboutModal.hidden = false
+})
+
+document.querySelector('#close-about').addEventListener('click', () => {
+  aboutModal.hidden = true
+})
+
+aboutModal.addEventListener('click', (e) => {
+  if (e.target === aboutModal) aboutModal.hidden = true
 })
 
 // --- Drag & drop ---
