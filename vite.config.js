@@ -8,7 +8,8 @@ const bpmnJsAssetSourcePlugin = () => ({
   load(id) {
     const normalizedId = id.split('?')[0].replace(/\\/g, '/')
 
-    if (!normalizedId.includes('/node_modules/bpmn-js/')) {
+    if (!normalizedId.includes('/node_modules/bpmn-js/') &&
+        !normalizedId.includes('/node_modules/bpmn-js-classic/')) {
       return null
     }
 

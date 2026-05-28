@@ -1,70 +1,110 @@
 import './style.css'
+
 import BpmnModeler from 'bpmn-js/lib/Modeler'
 import 'bpmn-js/dist/assets/diagram-js.css'
 import 'bpmn-js/dist/assets/bpmn-js.css'
 import 'bpmn-js/dist/assets/bpmn-font/css/bpmn.css'
 
+import BpmnModelerClassic from 'bpmn-js-classic/lib/Modeler'
+import 'bpmn-js-classic/dist/assets/diagram-js.css'
+import 'bpmn-js-classic/dist/assets/bpmn-js.css'
+import 'bpmn-js-classic/dist/assets/bpmn-font/css/bpmn.css'
+
 const defaultDiagramPath = `${import.meta.env.BASE_URL}default-diagram.bpmn`
 
 document.querySelector('#app').innerHTML = `
 <main class="app-shell">
-  <button id="menu-toggle" class="menu-toggle" type="button" aria-label="Open menu" aria-expanded="false">
-    <span></span>
-    <span></span>
-    <span></span>
-  </button>
-  <nav id="menu" class="menu" hidden>
-    <button id="new-diagram" type="button">New Diagram</button>
-    <button id="download-diagram" type="button">Download BPMN</button>
-    <button id="open-about" type="button">About</button>
-  </nav>
-  <section id="about-modal" class="about-modal" hidden>
-    <article class="about-card" role="dialog" aria-modal="true" aria-labelledby="about-title">
-      <div class="about-header">
-        <h2 id="about-title">About</h2>
-        <button id="close-about" class="about-close" type="button" aria-label="Close about">×</button>
+  <div class="split-container collapse-left">
+    <div class="panel panel-left">
+      <div class="panel-header">
+        <span class="panel-label">Before</span>
       </div>
-      <p>This is a demo of a potentially improved BPMN modeler experience.</p>
-      <p>Features:</p>
-      <ul class="about-points">
-        <li>Refreshed BPMN symbols for cleaner visuals</li>
-        <li>Rounded corners for friendlier look</li>
-        <li>Outline shown on hover for better visual feedback</li>
-      </ul>
-    </article>
-  </section>
+      <div id="canvas-left" class="canvas"></div>
+    </div>
+    <div class="divider" id="divider"></div>
+    <div class="panel panel-right">
+      <div class="panel-header">
+        <span id="panel-right-label" class="panel-label">BPMN Modeler</span>
+        <div class="panel-actions">
+          <button id="new-diagram" class="toggle-split" type="button">New diagram</button>
+          <button id="toggle-split" class="toggle-split" type="button" aria-label="Toggle comparison">Show before</button>
+        </div>
+      </div>
+      <div id="canvas-right" class="canvas"></div>
+    </div>
+  </div>
   <div id="drop-overlay" class="drop-overlay" hidden>
     <p>Drop a BPMN/XML file to import</p>
   </div>
-  <div id="canvas"></div>
 </main>
 `
 
-const modeler = new BpmnModeler({
-  container: '#canvas'
+// --- Modelers ---
+
+const modelerClassic = new BpmnModelerClassic({
+  container: '#canvas-left'
 })
 
-const menuToggle = document.querySelector('#menu-toggle')
-const menu = document.querySelector('#menu')
-const appShell = document.querySelector('.app-shell')
-const dropOverlay = document.querySelector('#drop-overlay')
-const aboutModal = document.querySelector('#about-modal')
-const openAboutButton = document.querySelector('#open-about')
-const closeAboutButton = document.querySelector('#close-about')
-let dragDepth = 0
+const modelerNew = new BpmnModeler({
+  container: '#canvas-right'
+})
 
-const setMenuOpen = (open) => {
-  menu.hidden = !open
-  menuToggle.setAttribute('aria-expanded', String(open))
+// --- Navigation sync ---
+
+let syncing = false
+
+function applyOriginAndZoom(canvas, origin, zoom) {
+  canvas.zoom(zoom)
+  const vb = canvas.viewbox()
+  const dx = origin.x - vb.x
+  const dy = origin.y - vb.y
+  canvas.scroll({ dx: -dx * zoom, dy: -dy * zoom })
 }
 
-const setDropOverlayOpen = (open) => {
-  dropOverlay.hidden = !open
+function syncViewbox(source, target) {
+  source.on('canvas.viewbox.changed', () => {
+    if (syncing) return
+    syncing = true
+    try {
+      const sourceCanvas = source.get('canvas')
+      const targetCanvas = target.get('canvas')
+      const vb = sourceCanvas.viewbox()
+      const origin = { x: vb.x, y: vb.y }
+      const zoom = sourceCanvas.zoom()
+      applyOriginAndZoom(targetCanvas, origin, zoom)
+    } catch (err) {
+      // ignore if target not ready
+    }
+    syncing = false
+  })
 }
 
-const setAboutOpen = (open) => {
-  aboutModal.hidden = !open
+syncViewbox(modelerClassic, modelerNew)
+syncViewbox(modelerNew, modelerClassic)
+
+// --- Modeling sync ---
+
+function syncModeling(source, target) {
+  source.on('commandStack.changed', async () => {
+    if (syncing) return
+    syncing = true
+    try {
+      const { xml } = await source.saveXML({ format: true })
+      const targetCanvas = target.get('canvas')
+      const viewbox = targetCanvas.viewbox()
+      await target.importXML(xml)
+      targetCanvas.viewbox(viewbox)
+    } catch (err) {
+      // ignore sync errors
+    }
+    syncing = false
+  })
 }
+
+syncModeling(modelerClassic, modelerNew)
+syncModeling(modelerNew, modelerClassic)
+
+// --- Diagram loading ---
 
 const loadDefaultDiagram = async () => {
   const response = await fetch(defaultDiagramPath)
@@ -76,24 +116,66 @@ const loadDefaultDiagram = async () => {
   return response.text()
 }
 
-setMenuOpen(false)
+const importDiagram = async (xml) => {
+  await Promise.all([
+    modelerClassic.importXML(xml),
+    modelerNew.importXML(xml)
+  ])
+}
 
-const importDiagram = async () => {
+const loadAndImport = async () => {
   try {
-    const xmlContent = await loadDefaultDiagram()
-    await importDiagramFromXml(xmlContent)
+    const xml = await loadDefaultDiagram()
+    await importDiagram(xml)
   } catch (error) {
     console.error('Failed to import BPMN diagram', error)
   }
 }
 
+// --- Toggle split/full ---
+
+const splitContainer = document.querySelector('.split-container')
+const panelLeft = document.querySelector('.panel-left')
+const toggleBtn = document.querySelector('#toggle-split')
+const panelRightLabel = document.querySelector('#panel-right-label')
+
+toggleBtn.addEventListener('click', async () => {
+  panelLeft.style.flex = ''
+  const wasCollapsed = splitContainer.classList.contains('collapse-left')
+  splitContainer.classList.toggle('collapse-left')
+  const isCollapsed = splitContainer.classList.contains('collapse-left')
+  toggleBtn.textContent = isCollapsed ? 'Show before' : 'Hide before'
+  panelRightLabel.textContent = isCollapsed ? 'BPMN Modeler' : 'After'
+
+  modelerClassic.get('canvas').resized()
+  modelerNew.get('canvas').resized()
+
+  // Sync classic modeler when opening split view
+  if (wasCollapsed) {
+    syncing = true
+    try {
+      const { xml } = await modelerNew.saveXML({ format: true })
+      await modelerClassic.importXML(xml)
+      const sourceCanvas = modelerNew.get('canvas')
+      const targetCanvas = modelerClassic.get('canvas')
+      const vb = sourceCanvas.viewbox()
+      applyOriginAndZoom(targetCanvas, { x: vb.x, y: vb.y }, sourceCanvas.zoom())
+    } catch (err) {
+      // ignore
+    }
+    syncing = false
+  }
+})
+
+// --- New diagram ---
+
 const NEW_DIAGRAM_XML = `<?xml version="1.0" encoding="UTF-8"?>
-<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" id="Definitions_0xr55f2" targetNamespace="http://bpmn.io/schema/bpmn" xmlns:zeebe="http://camunda.org/schema/zeebe/1.0" xmlns:modeler="http://camunda.org/schema/modeler/1.0" exporter="Camunda Modeler" exporterVersion="5.47.0" modeler:executionPlatform="Camunda Cloud" modeler:executionPlatformVersion="8.9.0">
-  <bpmn:process id="Process_157x7hv" isExecutable="true">
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" id="Definitions_1" targetNamespace="http://bpmn.io/schema/bpmn">
+  <bpmn:process id="Process_1" isExecutable="true">
     <bpmn:startEvent id="StartEvent_1" />
   </bpmn:process>
   <bpmndi:BPMNDiagram id="BPMNDiagram_1">
-    <bpmndi:BPMNPlane id="BPMNPlane_1" bpmnElement="Process_157x7hv">
+    <bpmndi:BPMNPlane id="BPMNPlane_1" bpmnElement="Process_1">
       <bpmndi:BPMNShape id="StartEvent_1_di" bpmnElement="StartEvent_1">
         <dc:Bounds x="182" y="162" width="36" height="36" />
       </bpmndi:BPMNShape>
@@ -101,103 +183,29 @@ const NEW_DIAGRAM_XML = `<?xml version="1.0" encoding="UTF-8"?>
   </bpmndi:BPMNDiagram>
 </bpmn:definitions>`
 
-const createNewDiagram = async () => {
-  try {
-    await importDiagramFromXml(NEW_DIAGRAM_XML)
-  } catch (error) {
-    console.error('Failed to create new diagram', error)
-  }
-}
+document.querySelector('#new-diagram').addEventListener('click', () => {
+  importDiagram(NEW_DIAGRAM_XML)
+})
 
-const downloadDiagram = async () => {
-  try {
-    const { xml } = await modeler.saveXML({ format: true })
-    const blob = new Blob([xml], { type: 'application/xml' })
-    const url = URL.createObjectURL(blob)
-    const anchor = document.createElement('a')
-    anchor.href = url
-    anchor.download = 'demo-diagram.bpmn'
-    anchor.click()
-    URL.revokeObjectURL(url)
-  } catch (error) {
-    console.error('Failed to export BPMN diagram', error)
-  }
-}
+// --- Drag & drop ---
 
-const importDiagramFromXml = async (xmlContent) => {
-  try {
-    await modeler.importXML(xmlContent)
-    // modeler.get('canvas').zoom('fit-viewport')
-  } catch (error) {
-    console.error('Failed to import dropped BPMN/XML file', error)
-  }
+const appShell = document.querySelector('.app-shell')
+const dropOverlay = document.querySelector('#drop-overlay')
+let dragDepth = 0
+
+const setDropOverlayOpen = (open) => {
+  dropOverlay.hidden = !open
 }
 
 const getDroppedFile = (dataTransfer) => {
-  if (!dataTransfer?.files?.length) {
-    return null
-  }
+  if (!dataTransfer?.files?.length) return null
 
   return Array.from(dataTransfer.files).find((file) => {
     const lowerName = file.name.toLowerCase()
-    const isXmlByName = lowerName.endsWith('.xml') || lowerName.endsWith('.bpmn')
-    const isXmlByType = file.type === 'text/xml' || file.type === 'application/xml'
-
-    return isXmlByName || isXmlByType
+    return lowerName.endsWith('.xml') || lowerName.endsWith('.bpmn') ||
+      file.type === 'text/xml' || file.type === 'application/xml'
   })
 }
-
-document
-  .querySelector('#new-diagram')
-  .addEventListener('click', () => {
-    createNewDiagram()
-    setMenuOpen(false)
-  })
-
-document
-  .querySelector('#download-diagram')
-  .addEventListener('click', () => {
-    downloadDiagram()
-    setMenuOpen(false)
-  })
-
-openAboutButton.addEventListener('click', () => {
-  setAboutOpen(true)
-  setMenuOpen(false)
-})
-
-closeAboutButton.addEventListener('click', () => {
-  setAboutOpen(false)
-})
-
-menuToggle.addEventListener('click', () => {
-  setMenuOpen(menu.hidden)
-})
-
-document.addEventListener('click', (event) => {
-  if (menu.hidden) {
-    return
-  }
-
-  const target = event.target
-
-  if (!menu.contains(target) && !menuToggle.contains(target)) {
-    setMenuOpen(false)
-  }
-})
-
-document.addEventListener('keydown', (event) => {
-  if (event.key === 'Escape') {
-    setMenuOpen(false)
-    setAboutOpen(false)
-  }
-})
-
-aboutModal.addEventListener('click', (event) => {
-  if (event.target === aboutModal) {
-    setAboutOpen(false)
-  }
-})
 
 appShell.addEventListener('dragenter', (event) => {
   event.preventDefault()
@@ -212,10 +220,7 @@ appShell.addEventListener('dragover', (event) => {
 appShell.addEventListener('dragleave', (event) => {
   event.preventDefault()
   dragDepth = Math.max(0, dragDepth - 1)
-
-  if (dragDepth === 0) {
-    setDropOverlayOpen(false)
-  }
+  if (dragDepth === 0) setDropOverlayOpen(false)
 })
 
 appShell.addEventListener('drop', async (event) => {
@@ -224,13 +229,46 @@ appShell.addEventListener('drop', async (event) => {
   setDropOverlayOpen(false)
 
   const droppedFile = getDroppedFile(event.dataTransfer)
+  if (!droppedFile) return
 
-  if (!droppedFile) {
-    return
-  }
-
-  const xmlContent = await droppedFile.text()
-  await importDiagramFromXml(xmlContent)
+  const xml = await droppedFile.text()
+  await importDiagram(xml)
 })
 
-importDiagram()
+// --- Divider drag to resize ---
+
+const divider = document.querySelector('#divider')
+
+let isDragging = false
+
+divider.addEventListener('mousedown', (e) => {
+  isDragging = true
+  document.body.style.cursor = 'col-resize'
+  document.body.style.userSelect = 'none'
+  e.preventDefault()
+})
+
+document.addEventListener('mousemove', (e) => {
+  if (!isDragging) return
+
+  const containerRect = splitContainer.getBoundingClientRect()
+  const offsetX = e.clientX - containerRect.left
+  const percentage = (offsetX / containerRect.width) * 100
+  const clamped = Math.min(Math.max(percentage, 20), 80)
+
+  panelLeft.style.flex = `0 0 ${clamped}%`
+
+  modelerClassic.get('canvas').resized()
+  modelerNew.get('canvas').resized()
+})
+
+document.addEventListener('mouseup', () => {
+  if (!isDragging) return
+  isDragging = false
+  document.body.style.cursor = ''
+  document.body.style.userSelect = ''
+})
+
+// --- Init ---
+
+loadAndImport()
